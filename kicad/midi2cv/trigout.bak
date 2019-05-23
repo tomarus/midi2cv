@@ -457,28 +457,6 @@ NoConn ~ 8900 4450
 NoConn ~ 8900 5150
 NoConn ~ 8900 5850
 NoConn ~ 2850 4050
-$Comp
-L Connector:Conn_01x08_Male J14
-U 1 1 5CFF758B
-P 6600 3550
-F 0 "J14" H 6800 4050 50  0000 R CNN
-F 1 "Conn_01x08_Male" H 6800 3950 50  0000 R CNN
-F 2 "Connector_PinSocket_2.54mm:PinSocket_1x08_P2.54mm_Vertical" H 6600 3550 50  0001 C CNN
-F 3 "~" H 6600 3550 50  0001 C CNN
-	1    6600 3550
-	-1   0    0    1   
-$EndComp
-$Comp
-L Connector:Conn_01x08_Female J15
-U 1 1 5CFF7824
-P 6800 3550
-F 0 "J15" H 6650 2900 50  0000 C CNN
-F 1 "Conn_01x08_Female" H 6950 3000 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical" H 6800 3550 50  0001 C CNN
-F 3 "~" H 6800 3550 50  0001 C CNN
-	1    6800 3550
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	5450 3450 5450 3150
 Wire Wire Line
@@ -892,5 +870,49 @@ F 2 "" H 2450 4350 50  0001 C CNN
 F 3 "" H 2450 4350 50  0001 C CNN
 	1    2450 4350
 	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Conn_01x04_Male J?
+U 1 1 5CE478A9
+P 6600 3350
+F 0 "J?" H 6700 2900 50  0000 R CNN
+F 1 "Conn_01x04_Male" H 7250 3000 50  0000 R CNN
+F 2 "" H 6600 3350 50  0001 C CNN
+F 3 "~" H 6600 3350 50  0001 C CNN
+	1    6600 3350
+	-1   0    0    1   
+$EndComp
+$Comp
+L Connector:Conn_01x04_Male J?
+U 1 1 5CE47981
+P 6600 3750
+F 0 "J?" H 6700 4050 50  0000 R CNN
+F 1 "Conn_01x04_Male" H 7250 3950 50  0000 R CNN
+F 2 "" H 6600 3750 50  0001 C CNN
+F 3 "~" H 6600 3750 50  0001 C CNN
+	1    6600 3750
+	-1   0    0    1   
+$EndComp
+$Comp
+L Connector:Conn_01x04_Female J?
+U 1 1 5CE47D41
+P 6800 3350
+F 0 "J?" H 6800 2900 50  0000 C CNN
+F 1 "Conn_01x04_Female" H 6500 3000 50  0000 C CNN
+F 2 "" H 6800 3350 50  0001 C CNN
+F 3 "~" H 6800 3350 50  0001 C CNN
+	1    6800 3350
+	-1   0    0    1   
+$EndComp
+$Comp
+L Connector:Conn_01x04_Female J?
+U 1 1 5CE47E01
+P 6800 3750
+F 0 "J?" H 6800 4050 50  0000 C CNN
+F 1 "Conn_01x04_Female" H 6500 3950 50  0000 C CNN
+F 2 "" H 6800 3750 50  0001 C CNN
+F 3 "~" H 6800 3750 50  0001 C CNN
+	1    6800 3750
+	-1   0    0    1   
 $EndComp
 $EndSCHEMATC

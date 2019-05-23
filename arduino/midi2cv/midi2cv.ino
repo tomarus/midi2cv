@@ -1,6 +1,7 @@
 #include <SPI.h>
 #include <DAC_MCP49xx.h>
 #include <MIDI.h>
+#include "eeprom.h"
 
 #define LED_PIN 2
 #define PIN_GATE 4
@@ -12,6 +13,7 @@
 
 MIDI_CREATE_DEFAULT_INSTANCE();
 DAC_MCP49xx dac(DAC_MCP49xx::MCP4922, 10); // DAC model, CS pin, LDAC pin
+Config cfg(0x50);						   // i2c addr of 24LC256
 
 long lastNoteOff = millis();
 
@@ -19,13 +21,14 @@ void setup()
 {
 	pinMode(LED_PIN, OUTPUT);
 	pinMode(PIN_GATE, OUTPUT);
+	digitalWrite(LED_PIN, true);
+	digitalWrite(PIN_GATE, false);
+
+	cfg.Load();
 
 	dac.setSPIDivider(SPI_CLOCK_DIV2);
 	dac.setAutomaticallyLatchDual(false);
 	dac.setPortWrite(true);
-
-	digitalWrite(LED_PIN, true);
-	digitalWrite(PIN_GATE, false);
 
 	MIDI.begin(1);
 	MIDI.setHandleNoteOn(handleNoteOn);
@@ -150,7 +153,7 @@ void handleControl(byte chanl, byte cc, byte val)
 {
 	// sustain pedal
 	if (cc != 64)
-	{ 
+	{
 		return;
 	}
 	sustain = val > 0;
@@ -177,58 +180,51 @@ void handleStop()
 	//  sustain = false;
 }
 
-static void handleSysex(byte *array, unsigned size) {
-  if (size < 5) return;
-  if (!(array[1] == 0x7d && array[2] == 0x2a && array[3] == 0x4f)) return;
-  
-  for (int i=4; i<size-1; i++) {
-    int command = array[i];
-    if (command >= 0x40) {
-      return;
-    }
-    
-    switch (command) {
-    case 0: {
-      byte response[] = {0xf0, 0x7d, 0x2a, 0x4d, 
-        0x40, 0x01,            // RESPONSE 0x40, version 1
-        0x01, 0x00,            // 1 inport, 0 outports
-        0xf7};
-      MIDI.sendSysEx(sizeof(response), response, true);
-      break;
-    }
-    // case 1: {
-    //   i += 7;
-    //   break;
-    // }
-    // case 2: {
-    //   bpm = (array[i+1] << 7) + array[i+2];
-    //   Timer1.setPeriod(60000000.0/bpm/24.0);
-    //   i += 2;
-    //   break;
-    // }
-    // default: {
-    //   Serial.print("Unsupported command: ");
-    //   Serial.println(command, HEX);
-    //   break;
-    // }
-    }
-  }
-}
+static void handleSysex(byte *array, unsigned size)
+{
+	if (size < 5)
+		return;
+	if (!(array[1] == 0x7d && array[2] == 0x2a && array[3] == 0x4f))
+		return;
 
-// config eeprom:
-//
-// 0x00 mode 0 = split, 1 = dual
-// 0x01 split mode: split at note
-// 0x02 dual mode: midi channel cv1
-// 0x03 dual mode: midi channel cv2
-// 0x04 main clock output divider
-//
-// 0x10 P1: mode 0 = drum, 1 = clock
-// 0x17 P8: ""
-//
-// 0x20 P1: trigger at midi drum note
-// 0x27 P8: ""
-//
-// 0x30 P1: clock divider
-// 0x37 P8: ""
-//
+	for (int i = 4; i < size - 1; i++)
+	{
+		int command = array[i];
+		if (command >= 0x40)
+		{
+			return;
+		}
+
+		switch (command)
+		{
+		case 0: // cmd 0x00 = info request
+		{
+			byte response[] = {0xf0, 0x7d, 0x2a, 0x4d,
+							   0x40, 0x01, // RESPONSE 0x40, version 1
+							   0x01, 0x00, // 1 inport, 0 outports
+							   0xf7};
+			MIDI.sendSysEx(sizeof(response), response, true);
+			break;
+		}
+		case 1: // cmd 0x01 = write a config byte
+		{
+			cfg.Write(array[i + 1], array[i + 2]);
+			byte response[] = {0xf0, 0x7d, 0x2a, 0x4d, 0x00, 0xf7}; // 0x00 == OK
+			MIDI.sendSysEx(sizeof(response), response, true);
+			break;
+		}
+		case 2: // cmd 0x02 = read config
+		{
+			byte response[] = {0xf0, 0x7d, 0x2a, 0x4d, cfg.Len()};
+			MIDI.sendSysEx(sizeof(response), response, true);
+			byte vals[cfg.Len()+1];
+			for (int i = 0; i < cfg.Len(); i++)
+			{
+				vals[i] = cfg.Read(i);
+			}
+			vals[cfg.Len()] = 0xf7;
+			MIDI.sendSysEx(cfg.Len()+1, vals, true);
+		}
+		}
+	}
+}

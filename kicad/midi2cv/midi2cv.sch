@@ -36,17 +36,6 @@ Connection ~ 2400 1100
 Wire Wire Line
 	2400 1100 2400 1200
 $Comp
-L MCU_Module:Arduino_Nano_v3.x A1
-U 1 1 5CCDABBC
-P 2550 6350
-F 0 "A1" H 2250 5350 50  0000 C CNN
-F 1 "Nano v3" H 2250 5250 50  0000 C CNN
-F 2 "Module:Arduino_Nano" H 2700 5400 50  0001 L CNN
-F 3 "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf" H 2550 5350 50  0001 C CNN
-	1    2550 6350
-	1    0    0    -1  
-$EndComp
-$Comp
 L Regulator_Linear:L7805 U1
 U 1 1 5CCDAD04
 P 3800 900
@@ -104,7 +93,7 @@ Text GLabel 4400 900  2    50   Input ~ 0
 Wire Wire Line
 	4200 900  4400 900 
 Connection ~ 4200 900 
-Text GLabel 2450 5200 1    50   Input ~ 0
+Text GLabel 2750 5200 1    50   Input ~ 0
 +5V
 $Comp
 L power:GND #PWR06
@@ -375,7 +364,6 @@ Text GLabel 4950 2200 0    50   Input ~ 0
 MIDI_IN
 Wire Wire Line
 	2650 7350 2650 7450
-Connection ~ 2650 7350
 Text GLabel 1750 5750 0    50   Input ~ 0
 MIDI_IN
 $Comp
@@ -428,9 +416,6 @@ F 3 "" H 900 1550 50  0001 C CNN
 	1    900  1550
 	0    -1   -1   0   
 $EndComp
-Wire Wire Line
-	2450 5200 2450 5350
-NoConn ~ 2750 5350
 $Comp
 L Device:R_POT RV1
 U 1 1 5CD097F7
@@ -1228,4 +1213,19 @@ F 3 "" H 5250 2500 50  0001 C CNN
 	1    5250 2500
 	1    0    0    -1  
 $EndComp
+$Comp
+L Tomarus:Arduino_Nano_v3.x A?
+U 1 1 5CE84812
+P 2550 6350
+F 0 "A?" H 2550 5264 50  0000 C CNN
+F 1 "Arduino_Nano_v3.x" H 2550 5173 50  0000 C CNN
+F 2 "Module:Arduino_Nano" H 2700 5400 50  0001 L CNN
+F 3 "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf" H 2550 5350 50  0001 C CNN
+	1    2550 6350
+	1    0    0    -1  
+$EndComp
+Connection ~ 2650 7350
+Wire Wire Line
+	2750 5350 2750 5200
+NoConn ~ 2450 5350
 $EndSCHEMATC

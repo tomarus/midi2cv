@@ -3,22 +3,29 @@
 
 Config::Config(byte addr)
 {
+	Wire.begin();
 	this->devaddr = addr;
 }
 
 void Config::Load()
 {
-	this->readAll();
+	byte *s = (byte *)this;
+	for (int i = 0; i < sizeof(this->mem); i++)
+	{
+		*s++ = this->readAddr(i);
+	}
+}
+void Config::Write(int addr, byte val)
+{
+	this->writeAddr(addr, val);
+	this->setmem(addr, val);
 }
 
-void Config::Write(int n, byte val)
+byte Config::Read(int addr)
 {
-	this->writeAddr(n, val);
-}
-
-byte Config::Read(int n)
-{
-	return this->readAddr(n);
+	byte val = this->readAddr(addr);
+	this->setmem(addr, val);
+	return val;
 }
 
 byte Config::Len()
@@ -45,13 +52,12 @@ byte Config::PClock(int n)
 
 //
 
-void Config::readAll()
+void Config::setmem(int addr, byte val)
 {
+	// hacketyhack
 	byte *s = (byte *)this;
-	for (int i = 0; i < sizeof(this->mem); i++)
-	{
-		*s++ = this->readAddr(i);
-	}
+	s += addr;
+	*s = val;
 }
 
 void Config::writeAll()
@@ -70,6 +76,7 @@ void Config::writeAddr(unsigned int addr, byte data)
 	Wire.write((int)(addr & 0xFF));
 	Wire.write(data);
 	Wire.endTransmission();
+	delay(5);
 }
 
 byte Config::readAddr(unsigned int addr)
@@ -80,7 +87,7 @@ byte Config::readAddr(unsigned int addr)
 	Wire.endTransmission();
 	Wire.requestFrom(this->devaddr, 1);
 
-	byte r;
+	byte r = 0xaa;
 	if (Wire.available())
 		r = Wire.read();
 	return r;

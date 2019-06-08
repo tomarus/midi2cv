@@ -3,39 +3,60 @@
 #include <MIDI.h>
 #include "eeprom.h"
 
-#define LED_PIN 2
-#define PIN_GATE 4
-
-#define POT_SPEED A0
+#define PIN_595_SER 4
+#define PIN_595_SRCLK 5
+#define PIN_595_RCLK 6
+#define PIN_DAC2_CS 7
+#define PIN_LED 8
+#define PIN_GATE2 9
+#define PIN_DAC1_CS 10
+#define PIN_GATE1 12
+#define PIN_POT_SPEED A0
 
 #define TRANSPOSE -36
 #define NOTE_BUFFER 128
+#define MAX_ARP_SPEED 100
 
 MIDI_CREATE_DEFAULT_INSTANCE();
-DAC_MCP49xx dac(DAC_MCP49xx::MCP4922, 10); // DAC model, CS pin, LDAC pin
-Config cfg(0x50);						   // i2c addr of 24LC256
 
-long lastNoteOff = millis();
+Config cfg(0x50); // I2C addr of 24LC256
+
+DAC_MCP49xx dac1(DAC_MCP49xx::MCP4922, PIN_DAC1_CS); // DAC model, CS pin, LDAC pin
+DAC_MCP49xx dac2(DAC_MCP49xx::MCP4922, PIN_DAC2_CS); // DAC model, CS pin, LDAC pin
 
 void setup()
 {
-	pinMode(LED_PIN, OUTPUT);
-	pinMode(PIN_GATE, OUTPUT);
-	digitalWrite(LED_PIN, true);
-	digitalWrite(PIN_GATE, false);
+	pinMode(PIN_595_SER, OUTPUT);
+	pinMode(PIN_595_SRCLK, OUTPUT);
+	pinMode(PIN_595_RCLK, OUTPUT);
+
+	pinMode(PIN_DAC1_CS, OUTPUT);
+	pinMode(PIN_DAC2_CS, OUTPUT);
+
+	pinMode(PIN_LED, OUTPUT);
+	pinMode(PIN_GATE1, OUTPUT);
+	pinMode(PIN_GATE2, OUTPUT);
+
+	digitalWrite(PIN_LED, true);
+	digitalWrite(PIN_GATE1, false);
+	digitalWrite(PIN_GATE2, false);
 
 	cfg.Load();
 
-	dac.setSPIDivider(SPI_CLOCK_DIV2);
-	dac.setAutomaticallyLatchDual(false);
-	dac.setPortWrite(true);
+	dac1.setSPIDivider(SPI_CLOCK_DIV2);
+	dac1.setAutomaticallyLatchDual(false);
+	dac1.setPortWrite(true);
+
+	dac2.setSPIDivider(SPI_CLOCK_DIV2);
+	dac2.setAutomaticallyLatchDual(false);
+	dac2.setPortWrite(true);
 
 	MIDI.begin(1);
+	MIDI.setHandleClock(handleClock);
 	MIDI.setHandleNoteOn(handleNoteOn);
 	MIDI.setHandleNoteOff(handleNoteOff);
 	MIDI.setHandleControlChange(handleControl);
-	MIDI.setHandleClock(handleClock);
-	MIDI.setHandleClock(handleStop);
+	MIDI.setHandleStop(handleStop);
 	MIDI.setHandleSystemExclusive(handleSysex);
 }
 
@@ -47,11 +68,11 @@ void loop()
 	{
 		// toggle led activity light
 		onoff = !onoff;
-		digitalWrite(LED_PIN, onoff);
+		digitalWrite(PIN_LED, onoff);
 	}
 
-	int speed = analogRead(POT_SPEED);
-	int val = map(speed, 0, 1023, 10, 100);
+	int speed = analogRead(PIN_POT_SPEED);
+	int val = map(speed, 0, 1023, 10, MAX_ARP_SPEED);
 
 	unsigned long newtime = time + val;
 	if (millis() >= newtime)
@@ -59,6 +80,11 @@ void loop()
 		playarploop();
 		time = newtime;
 	}
+
+	// Test Programmable outputs by sending random gates.
+	// digitalWrite(PIN_595_RCLK, 0);
+	shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, rand());
+	// digitalWrite(PIN_595_RCLK, 1);
 }
 
 int notes[NOTE_BUFFER];  // pressed notes
@@ -67,6 +93,7 @@ int maxnote = 0;
 int maxpnote = 0;
 int curnote = 0;
 bool sustain = false;
+long lastNoteOff = millis();
 
 void playarploop()
 {
@@ -75,7 +102,8 @@ void playarploop()
 		curnote = 0;
 	}
 	int val = map(pnotes[curnote] + TRANSPOSE, 0, 59, 0, 4095);
-	dac.output2(val, val);
+	dac1.output2(val, val);
+	dac2.output2(val, val);
 	curnote++;
 }
 
@@ -93,8 +121,10 @@ void handleNoteOn(byte chan, byte note, byte vel)
 	maxpnote++;
 
 	int val = map(note + TRANSPOSE, 0, 59, 0, 4095);
-	dac.output2(val, val);
-	digitalWrite(PIN_GATE, true);
+	dac1.output2(val, val);
+	dac2.output2(val, val);
+	digitalWrite(PIN_GATE1, true);
+	digitalWrite(PIN_GATE2, true);
 
 	curnote = maxpnote > 0 ? maxpnote - 1 : 0;
 	// time = millis();
@@ -124,7 +154,8 @@ void removeAllPlayingNotes()
 
 void handleNoteOff(byte dhan, byte note, byte vel)
 {
-	digitalWrite(PIN_GATE, false);
+	digitalWrite(PIN_GATE1, false);
+	digitalWrite(PIN_GATE2, false);
 
 	int j = 0;
 	for (int i = 0; i < maxnote; i++)
@@ -135,17 +166,6 @@ void handleNoteOff(byte dhan, byte note, byte vel)
 		}
 	}
 	maxnote--;
-
-	// if (!sustain)
-	// {
-	// removePlayingNote(note);
-	// }
-
-	// if (lastNoteOff < millis() - 20)
-	// {
-	// 	removePlayingNote(note);
-	// 	lastNoteOff = millis();
-	// }
 }
 
 // handle sustain pedal
@@ -164,20 +184,12 @@ void handleControl(byte chanl, byte cc, byte val)
 	}
 }
 
-//bool toggle = false;
-void handleClock()
-{
-	//  toggle = !toggle;
-	//  digitalWrite(PIN_4040_CP, toggle);
-}
-
 void handleStop()
 {
-	//  TODO: Enable this when not using midi devbox...
-	//  maxpnote = 0;
-	//  maxnote = 0;
-	//  curnote = 0;
-	//  sustain = false;
+	maxpnote = 0;
+	maxnote = 0;
+	curnote = 0;
+	sustain = false;
 }
 
 static void handleSysex(byte *array, unsigned size)
@@ -197,34 +209,67 @@ static void handleSysex(byte *array, unsigned size)
 
 		switch (command)
 		{
-		case 0: // cmd 0x00 = info request
-		{
-			byte response[] = {0xf0, 0x7d, 0x2a, 0x4d,
-							   0x40, 0x01, // RESPONSE 0x40, version 1
-							   0x01, 0x00, // 1 inport, 0 outports
-							   0xf7};
-			MIDI.sendSysEx(sizeof(response), response, true);
-			break;
-		}
 		case 1: // cmd 0x01 = write a config byte
 		{
-			cfg.Write(array[i + 1], array[i + 2]);
-			byte response[] = {0xf0, 0x7d, 0x2a, 0x4d, 0x00, 0xf7}; // 0x00 == OK
-			MIDI.sendSysEx(sizeof(response), response, true);
+			cfg.Write(array[i + 1], array[i + 2]); // addr = byte1, val = byte2
 			break;
-		}
-		case 2: // cmd 0x02 = read config
-		{
-			byte response[] = {0xf0, 0x7d, 0x2a, 0x4d, cfg.Len()};
-			MIDI.sendSysEx(sizeof(response), response, true);
-			byte vals[cfg.Len()+1];
-			for (int i = 0; i < cfg.Len(); i++)
-			{
-				vals[i] = cfg.Read(i);
-			}
-			vals[cfg.Len()] = 0xf7;
-			MIDI.sendSysEx(cfg.Len()+1, vals, true);
 		}
 		}
 	}
+}
+
+int ticks = 0;
+// int counter = 0;
+byte clock = 0x00;
+
+void handleClock(void)
+{
+
+	ticks++;
+	if (ticks == 6)
+	{
+		ticks = 0;
+		// counter++;
+		// if (counter == 64)
+		// {
+		// 	counter = 0;
+		// }
+
+		clock++;
+		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, clock);
+
+		// if (counter%2==0) {
+		// 	digitalWrite(CLOCK2_PIN, HIGH);
+		// }
+		// if (counter%4==0) {
+		// 	digitalWrite(CLOCK4_PIN, HIGH);
+		// }
+		// if (counter%8==0) {
+		// 	digitalWrite(CLOCK8_PIN, HIGH);
+		// }
+		// if (counter%16==0) {
+		// 	digitalWrite(CLOCK16_PIN, HIGH);
+		// }
+		// if (counter%32==0) {
+		// 	digitalWrite(CLOCK32_PIN, HIGH);
+		// }
+	}
+}
+
+// shiftOut sets the 8 programmable gates to the
+// individual bits of the data byte input.
+void shiftOut(int ser, int srclk, int rclk, byte data)
+{
+	digitalWrite(rclk, 0);
+	// digitalWrite(ser, 0);
+	// digitalWrite(srclk, 0);
+	for (int i = 7; i >= 0; i--)
+	{
+		digitalWrite(srclk, 0);
+		digitalWrite(ser, data & (1 << 1));
+		digitalWrite(srclk, 1);
+		// digitalWrite(ser, 0);
+	}
+	// digitalWrite(srclk, 0);
+	digitalWrite(rclk, 1);
 }

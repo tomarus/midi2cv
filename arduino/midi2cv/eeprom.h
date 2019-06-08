@@ -22,7 +22,8 @@ struct cfgmem
 	byte transpose2;
 	byte cc1;
 	byte cc2;
-	byte _[8];
+	byte reserved[8];
+
 	byte pmode[16];
 	byte pnote[16];
 	byte pclock[16];
@@ -31,6 +32,8 @@ struct cfgmem
 class Config
 {
 public:
+	cfgmem mem;
+
 	Config(byte addr);
 	void Load();
 
@@ -44,9 +47,8 @@ public:
 
 private:
 	int devaddr;
-	cfgmem mem;
 
-	void readAll();
+	void setmem(int, byte);
 	void writeAll();
 	void writeAddr(unsigned int, byte);
 	byte readAddr(unsigned int);

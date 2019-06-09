@@ -15,7 +15,8 @@
 
 #define TRANSPOSE -36
 #define NOTE_BUFFER 128
-#define MAX_ARP_SPEED 100
+#define MIN_ARP_SPEED 20
+#define MAX_ARP_SPEED 200
 
 MIDI_CREATE_DEFAULT_INSTANCE();
 
@@ -49,9 +50,9 @@ void setup()
 
 	dac2.setSPIDivider(SPI_CLOCK_DIV2);
 	dac2.setAutomaticallyLatchDual(false);
-	dac2.setPortWrite(true);
+	dac2.setPortWrite(false); // false cos non standard spi port
 
-	MIDI.begin(1);
+	MIDI.begin(0); // channel
 	MIDI.setHandleClock(handleClock);
 	MIDI.setHandleNoteOn(handleNoteOn);
 	MIDI.setHandleNoteOff(handleNoteOff);
@@ -61,18 +62,22 @@ void setup()
 }
 
 bool onoff;
+void toggleled()
+{
+	onoff = !onoff;
+	digitalWrite(PIN_LED, onoff);
+}
+
 unsigned long time = millis();
 void loop()
 {
 	if (MIDI.read())
 	{
-		// toggle led activity light
-		onoff = !onoff;
-		digitalWrite(PIN_LED, onoff);
+		toggleled();
 	}
 
 	int speed = analogRead(PIN_POT_SPEED);
-	int val = map(speed, 0, 1023, 10, MAX_ARP_SPEED);
+	int val = map(speed, 0, 1023, MIN_ARP_SPEED, MAX_ARP_SPEED);
 
 	unsigned long newtime = time + val;
 	if (millis() >= newtime)
@@ -80,11 +85,6 @@ void loop()
 		playarploop();
 		time = newtime;
 	}
-
-	// Test Programmable outputs by sending random gates.
-	// digitalWrite(PIN_595_RCLK, 0);
-	shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, rand());
-	// digitalWrite(PIN_595_RCLK, 1);
 }
 
 int notes[NOTE_BUFFER];  // pressed notes
@@ -103,12 +103,16 @@ void playarploop()
 	}
 	int val = map(pnotes[curnote] + TRANSPOSE, 0, 59, 0, 4095);
 	dac1.output2(val, val);
-	dac2.output2(val, val);
 	curnote++;
 }
 
 void handleNoteOn(byte chan, byte note, byte vel)
 {
+	if (chan != cfg.mem.midi1)
+	{
+		return;
+	}
+
 	if (lastNoteOff < millis() - 20)
 	{
 		removeAllPlayingNotes();
@@ -122,7 +126,6 @@ void handleNoteOn(byte chan, byte note, byte vel)
 
 	int val = map(note + TRANSPOSE, 0, 59, 0, 4095);
 	dac1.output2(val, val);
-	dac2.output2(val, val);
 	digitalWrite(PIN_GATE1, true);
 	digitalWrite(PIN_GATE2, true);
 
@@ -152,8 +155,13 @@ void removeAllPlayingNotes()
 	maxpnote = maxnote;
 }
 
-void handleNoteOff(byte dhan, byte note, byte vel)
+void handleNoteOff(byte chan, byte note, byte vel)
 {
+	if (chan != cfg.mem.midi1)
+	{
+		return;
+	}
+
 	digitalWrite(PIN_GATE1, false);
 	digitalWrite(PIN_GATE2, false);
 
@@ -169,18 +177,29 @@ void handleNoteOff(byte dhan, byte note, byte vel)
 }
 
 // handle sustain pedal
-void handleControl(byte chanl, byte cc, byte val)
+void handleControl(byte chan, byte cc, byte val)
 {
 	// sustain pedal
-	if (cc != 64)
+	if (cc == 64 && chan == cfg.mem.midi1)
 	{
+		sustain = val > 0;
+		if (val == 0)
+		{
+			removeAllPlayingNotes();
+		}
 		return;
 	}
-	sustain = val > 0;
 
-	if (val == 0)
+	if (cc == cfg.mem.cc1 && chan == cfg.mem.cc1ch)
 	{
-		removeAllPlayingNotes();
+		dac2.outputA(val * 32);
+		return;
+	}
+
+	if (cc == cfg.mem.cc2 && chan == cfg.mem.cc2ch)
+	{
+		dac2.outputB(val * 32);
+		return;
 	}
 }
 
@@ -219,40 +238,16 @@ static void handleSysex(byte *array, unsigned size)
 }
 
 int ticks = 0;
-// int counter = 0;
 byte clock = 0x00;
 
 void handleClock(void)
 {
-
 	ticks++;
 	if (ticks == 6)
 	{
 		ticks = 0;
-		// counter++;
-		// if (counter == 64)
-		// {
-		// 	counter = 0;
-		// }
-
 		clock++;
 		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, clock);
-
-		// if (counter%2==0) {
-		// 	digitalWrite(CLOCK2_PIN, HIGH);
-		// }
-		// if (counter%4==0) {
-		// 	digitalWrite(CLOCK4_PIN, HIGH);
-		// }
-		// if (counter%8==0) {
-		// 	digitalWrite(CLOCK8_PIN, HIGH);
-		// }
-		// if (counter%16==0) {
-		// 	digitalWrite(CLOCK16_PIN, HIGH);
-		// }
-		// if (counter%32==0) {
-		// 	digitalWrite(CLOCK32_PIN, HIGH);
-		// }
 	}
 }
 
@@ -266,7 +261,7 @@ void shiftOut(int ser, int srclk, int rclk, byte data)
 	for (int i = 7; i >= 0; i--)
 	{
 		digitalWrite(srclk, 0);
-		digitalWrite(ser, data & (1 << 1));
+		digitalWrite(ser, data & (1 << i));
 		digitalWrite(srclk, 1);
 		// digitalWrite(ser, 0);
 	}

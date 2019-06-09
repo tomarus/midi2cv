@@ -21,13 +21,6 @@ void Config::Write(int addr, byte val)
 	this->setmem(addr, val);
 }
 
-byte Config::Read(int addr)
-{
-	byte val = this->readAddr(addr);
-	this->setmem(addr, val);
-	return val;
-}
-
 byte Config::Len()
 {
 	return sizeof(this->mem);

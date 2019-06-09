@@ -3,30 +3,23 @@
 
 #include "Arduino.h"
 
-#define CFG_MODE 0
-#define CFG_SPLIT 1
-#define CFG_MIDI1 2
-#define CFG_MIDI2 3
-#define CFG_TRANSPOSE1 4
-#define CFG_TRANSPOSE2 5
-#define CFG_CC1 6
-#define CFG_CC2 7
-
 struct cfgmem
 {
-	byte mode;
-	byte split;
+	byte _mode;
+	byte _split;
 	byte midi1;
-	byte midi2;
-	byte transpose1;
-	byte transpose2;
+	byte _midi2;
+	byte _transpose1;
+	byte _transpose2;
 	byte cc1;
 	byte cc2;
-	byte reserved[8];
+	byte cc1ch;
+	byte cc2ch;
+	byte reserved[6];
 
-	byte pmode[16];
-	byte pnote[16];
-	byte pclock[16];
+	byte pmode[8];
+	byte pnote[8];
+	byte pclock[8];
 };
 
 class Config
@@ -38,7 +31,6 @@ public:
 	void Load();
 
 	void Write(int, byte);
-	byte Read(int);
 	byte Len();
 
 	byte PMode(int);

@@ -16,7 +16,7 @@
 #define TRANSPOSE -36
 #define NOTE_BUFFER 128
 #define MIN_ARP_SPEED 20
-#define MAX_ARP_SPEED 200
+#define MAX_ARP_SPEED 300
 
 MIDI_CREATE_DEFAULT_INSTANCE();
 
@@ -92,18 +92,17 @@ int pnotes[NOTE_BUFFER]; // playing notes
 int maxnote = 0;
 int maxpnote = 0;
 int curnote = 0;
-bool sustain = false;
 long lastNoteOff = millis();
 
 void playarploop()
 {
+	curnote++;
 	if (curnote >= maxpnote)
 	{
 		curnote = 0;
 	}
 	int val = map(pnotes[curnote] + TRANSPOSE, 0, 59, 0, 4095);
 	dac1.output2(val, val);
-	curnote++;
 }
 
 void handleNoteOn(byte chan, byte note, byte vel)
@@ -118,19 +117,21 @@ void handleNoteOn(byte chan, byte note, byte vel)
 		removeAllPlayingNotes();
 	}
 
+	if (maxnote == 0)
+	{
+		int val = map(note + TRANSPOSE, 0, 59, 0, 4095);
+		dac1.output2(val, val);
+		digitalWrite(PIN_GATE1, true);
+		digitalWrite(PIN_GATE2, true);
+		curnote = 0;
+		time = millis();
+	}
+
 	notes[maxnote] = note;
 	maxnote++;
 
 	pnotes[maxpnote] = note;
 	maxpnote++;
-
-	int val = map(note + TRANSPOSE, 0, 59, 0, 4095);
-	dac1.output2(val, val);
-	digitalWrite(PIN_GATE1, true);
-	digitalWrite(PIN_GATE2, true);
-
-	curnote = maxpnote > 0 ? maxpnote - 1 : 0;
-	// time = millis();
 }
 
 void removePlayingNote(byte note)
@@ -162,9 +163,6 @@ void handleNoteOff(byte chan, byte note, byte vel)
 		return;
 	}
 
-	digitalWrite(PIN_GATE1, false);
-	digitalWrite(PIN_GATE2, false);
-
 	int j = 0;
 	for (int i = 0; i < maxnote; i++)
 	{
@@ -174,22 +172,17 @@ void handleNoteOff(byte chan, byte note, byte vel)
 		}
 	}
 	maxnote--;
+
+	if (maxnote == 0)
+	{
+		digitalWrite(PIN_GATE1, false);
+		digitalWrite(PIN_GATE2, false);
+	}
 }
 
 // handle sustain pedal
 void handleControl(byte chan, byte cc, byte val)
 {
-	// sustain pedal
-	if (cc == 64 && chan == cfg.mem.midi1)
-	{
-		sustain = val > 0;
-		if (val == 0)
-		{
-			removeAllPlayingNotes();
-		}
-		return;
-	}
-
 	if (cc == cfg.mem.cc1 && chan == cfg.mem.cc1ch)
 	{
 		dac2.outputA(val * 32);
@@ -208,7 +201,6 @@ void handleStop()
 	maxpnote = 0;
 	maxnote = 0;
 	curnote = 0;
-	sustain = false;
 }
 
 static void handleSysex(byte *array, unsigned size)
@@ -243,7 +235,7 @@ byte clock = 0x00;
 void handleClock(void)
 {
 	ticks++;
-	if (ticks == 6)
+	if (ticks == 3)
 	{
 		ticks = 0;
 		clock++;
@@ -256,15 +248,11 @@ void handleClock(void)
 void shiftOut(int ser, int srclk, int rclk, byte data)
 {
 	digitalWrite(rclk, 0);
-	// digitalWrite(ser, 0);
-	// digitalWrite(srclk, 0);
 	for (int i = 7; i >= 0; i--)
 	{
 		digitalWrite(srclk, 0);
 		digitalWrite(ser, data & (1 << i));
 		digitalWrite(srclk, 1);
-		// digitalWrite(ser, 0);
 	}
-	// digitalWrite(srclk, 0);
 	digitalWrite(rclk, 1);
 }

@@ -59,6 +59,7 @@ void setup()
 	MIDI.setHandleControlChange(handleControl);
 	MIDI.setHandleStop(handleStop);
 	MIDI.setHandleSystemExclusive(handleSysex);
+	MIDI.setHandlePitchBend(handlePitchBend);
 }
 
 bool onoff;
@@ -93,6 +94,23 @@ int maxnote = 0;
 int maxpnote = 0;
 int curnote = 0;
 long lastNoteOff = millis();
+int pitch = 0;
+
+int bound(int val)
+{
+	if (val < 0)
+	{
+		return 0;
+	}
+	else if (val > 4095)
+	{
+		return 4095;
+	}
+	else
+	{
+		return val;
+	}
+}
 
 void playarploop()
 {
@@ -101,7 +119,7 @@ void playarploop()
 	{
 		curnote = 0;
 	}
-	int val = map(pnotes[curnote] + TRANSPOSE, 0, 59, 0, 4095);
+	int val = bound(map(pnotes[curnote] + TRANSPOSE, 0, 59, 0, 4095) + pitch);
 	dac1.output2(val, val);
 }
 
@@ -119,7 +137,7 @@ void handleNoteOn(byte chan, byte note, byte vel)
 
 	if (maxnote == 0)
 	{
-		int val = map(note + TRANSPOSE, 0, 59, 0, 4095);
+		int val = bound(map(note + TRANSPOSE, 0, 59, 0, 4095) + pitch);
 		dac1.output2(val, val);
 		digitalWrite(PIN_GATE1, true);
 		digitalWrite(PIN_GATE2, true);
@@ -255,4 +273,13 @@ void shiftOut(int ser, int srclk, int rclk, byte data)
 		digitalWrite(srclk, 1);
 	}
 	digitalWrite(rclk, 1);
+}
+
+void handlePitchBend(byte chan, int val)
+{
+	if (chan != cfg.mem.midi1)
+	{
+		return;
+	}
+	pitch = (val / (16384 / (4096 / 60)) * cfg.mem.pb1range);
 }

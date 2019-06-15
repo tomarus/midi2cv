@@ -13,9 +13,12 @@ struct cfgmem
 	byte _transpose2;
 	byte cc1;
 	byte cc2;
+	// 0x08
 	byte cc1ch;
 	byte cc2ch;
-	byte reserved[6];
+	byte pb1range;
+	byte pb2range;
+	byte reserved[4];
 
 	byte pmode[8];
 	byte pnote[8];

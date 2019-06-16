@@ -18,7 +18,11 @@ struct cfgmem
 	byte cc2ch;
 	byte pb1range;
 	byte pb2range;
-	byte reserved[4];
+	// 0x0c
+	byte midi1sync;
+	byte midi2sync;
+	byte clockticks;
+	byte _reserved;
 
 	byte pmode[8];
 	byte pnote[8];

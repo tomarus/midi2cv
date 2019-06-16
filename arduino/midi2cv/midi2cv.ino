@@ -58,6 +58,7 @@ void setup()
 	MIDI.setHandleNoteOff(handleNoteOff);
 	MIDI.setHandleControlChange(handleControl);
 	MIDI.setHandleStop(handleStop);
+	MIDI.setHandleStart(handleStart);
 	MIDI.setHandleSystemExclusive(handleSysex);
 	MIDI.setHandlePitchBend(handlePitchBend);
 }
@@ -77,14 +78,16 @@ void loop()
 		toggleled();
 	}
 
-	int speed = analogRead(PIN_POT_SPEED);
-	int val = map(speed, 0, 1023, MIN_ARP_SPEED, MAX_ARP_SPEED);
+	if (cfg.mem.midi1sync == 0) {
+		int speed = analogRead(PIN_POT_SPEED);
+		int val = map(speed, 0, 1023, MIN_ARP_SPEED, MAX_ARP_SPEED);
 
-	unsigned long newtime = time + val;
-	if (millis() >= newtime)
-	{
-		playarploop();
-		time = newtime;
+		unsigned long newtime = time + val;
+		if (millis() >= newtime)
+		{
+			playarploop();
+			time = newtime;
+		}
 	}
 }
 
@@ -216,9 +219,9 @@ void handleControl(byte chan, byte cc, byte val)
 
 void handleStop()
 {
-	maxpnote = 0;
-	maxnote = 0;
-	curnote = 0;
+	// maxpnote = 0;
+	// maxnote = 0;
+	// curnote = 0;
 }
 
 static void handleSysex(byte *array, unsigned size)
@@ -248,16 +251,39 @@ static void handleSysex(byte *array, unsigned size)
 }
 
 int ticks = 0;
-byte clock = 0x00;
+int midi1ticks = 0;
+byte clock = 0xff;
+byte oldclock = 0xff;
+
+void handleStart()
+{
+	ticks = 1;
+	midi1ticks = 1;
+	clock = 0xff;
+	oldclock = 0xff;
+	curnote = 0;
+}
 
 void handleClock(void)
 {
 	ticks++;
-	if (ticks == 3)
+	midi1ticks++;
+
+	if (cfg.mem.midi1sync > 0 && midi1ticks >= cfg.mem.midi1sync)
+	{
+		midi1ticks = 0;
+		playarploop();
+	}
+
+	if (ticks >= cfg.mem.clockticks)
 	{
 		ticks = 0;
 		clock++;
-		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, clock);
+		byte val = oldclock^clock;
+		oldclock = clock;
+		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, val);
+	} else {
+		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, 0);
 	}
 }
 

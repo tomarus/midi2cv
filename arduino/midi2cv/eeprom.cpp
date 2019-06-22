@@ -15,6 +15,7 @@ void Config::Load()
 		*s++ = this->readAddr(i);
 	}
 }
+
 void Config::Write(int addr, byte val)
 {
 	this->writeAddr(addr, val);
@@ -69,7 +70,7 @@ void Config::writeAddr(unsigned int addr, byte data)
 	Wire.write((int)(addr & 0xFF));
 	Wire.write(data);
 	Wire.endTransmission();
-	delay(5);
+	delay(10);
 }
 
 byte Config::readAddr(unsigned int addr)
@@ -83,5 +84,6 @@ byte Config::readAddr(unsigned int addr)
 	byte r = 0xaa;
 	if (Wire.available())
 		r = Wire.read();
+	delay(10);
 	return r;
 }

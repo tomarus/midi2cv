@@ -1,7 +1,9 @@
 #include <SPI.h>
 #include <DAC_MCP49xx.h>
 #include <MIDI.h>
+
 #include "eeprom.h"
+#include "arp.h"
 
 #define PIN_595_SER 4
 #define PIN_595_SRCLK 5
@@ -13,17 +15,15 @@
 #define PIN_GATE1 12
 #define PIN_POT_SPEED A0
 
-#define TRANSPOSE -36
-#define NOTE_BUFFER 128
-#define MIN_ARP_SPEED 20
-#define MAX_ARP_SPEED 300
-
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 Config cfg(0x50); // I2C addr of 24LC256
 
 DAC_MCP49xx dac1(DAC_MCP49xx::MCP4922, PIN_DAC1_CS); // DAC model, CS pin, LDAC pin
 DAC_MCP49xx dac2(DAC_MCP49xx::MCP4922, PIN_DAC2_CS); // DAC model, CS pin, LDAC pin
+
+Arp arp1;
+Arp arp2;
 
 void setup()
 {
@@ -43,6 +43,10 @@ void setup()
 	digitalWrite(PIN_GATE2, false);
 
 	cfg.Load();
+	arp1.Transpose = cfg.mem.transpose1;
+	arp2.Transpose = cfg.mem.transpose2;
+	arp1.Pitch = 0;
+	arp2.Pitch = 0;
 
 	dac1.setSPIDivider(SPI_CLOCK_DIV2);
 	dac1.setAutomaticallyLatchDual(false);
@@ -51,6 +55,9 @@ void setup()
 	dac2.setSPIDivider(SPI_CLOCK_DIV2);
 	dac2.setAutomaticallyLatchDual(false);
 	dac2.setPortWrite(false); // false cos non standard spi port
+
+	dac1.output2(0, 0);
+	dac2.output2(0, 0);
 
 	MIDI.begin(0); // channel
 	MIDI.setHandleClock(handleClock);
@@ -70,7 +77,6 @@ void toggleled()
 	digitalWrite(PIN_LED, onoff);
 }
 
-unsigned long time = millis();
 void loop()
 {
 	if (MIDI.read())
@@ -78,126 +84,104 @@ void loop()
 		toggleled();
 	}
 
-	if (cfg.mem.midi1sync == 0) {
-		int speed = analogRead(PIN_POT_SPEED);
-		int val = map(speed, 0, 1023, MIN_ARP_SPEED, MAX_ARP_SPEED);
-
-		unsigned long newtime = time + val;
-		if (millis() >= newtime)
-		{
-			playarploop();
-			time = newtime;
-		}
-	}
-}
-
-int notes[NOTE_BUFFER];  // pressed notes
-int pnotes[NOTE_BUFFER]; // playing notes
-int maxnote = 0;
-int maxpnote = 0;
-int curnote = 0;
-long lastNoteOff = millis();
-int pitch = 0;
-
-int bound(int val)
-{
-	if (val < 0)
+	int speed = analogRead(PIN_POT_SPEED);
+	if (cfg.mem.midi1sync == 0)
 	{
-		return 0;
+		int val = arp1.CheckPlayNote(speed);
+		if (val != -1)
+			dac1.outputA(val);
 	}
-	else if (val > 4095)
+	if (cfg.mem.midi2sync == 0)
 	{
-		return 4095;
+		int val = arp2.CheckPlayNote(speed);
+		if (val != -1)
+			dac1.outputB(val);
 	}
-	else
-	{
-		return val;
-	}
-}
-
-void playarploop()
-{
-	curnote++;
-	if (curnote >= maxpnote)
-	{
-		curnote = 0;
-	}
-	int val = bound(map(pnotes[curnote] + TRANSPOSE, 0, 59, 0, 4095) + pitch);
-	dac1.output2(val, val);
 }
 
 void handleNoteOn(byte chan, byte note, byte vel)
 {
-	if (chan != cfg.mem.midi1)
+	if (chan == cfg.mem.midi1 && cfg.mem.split > 0)
 	{
+		if (note >= cfg.mem.split)
+		{
+			int val = arp1.HandleNoteOn(note);
+			if (val != -1)
+			{
+				digitalWrite(PIN_GATE1, true);
+				dac1.outputA(val);
+			}
+		}
+		if (note < cfg.mem.split)
+		{
+			int val = arp2.HandleNoteOn(note);
+			if (val != -1)
+			{
+				digitalWrite(PIN_GATE2, true);
+				dac1.outputB(val);
+			}
+		}
 		return;
 	}
 
-	if (lastNoteOff < millis() - 20)
+	if (chan == cfg.mem.midi1)
 	{
-		removeAllPlayingNotes();
-	}
-
-	if (maxnote == 0)
-	{
-		int val = bound(map(note + TRANSPOSE, 0, 59, 0, 4095) + pitch);
-		dac1.output2(val, val);
-		digitalWrite(PIN_GATE1, true);
-		digitalWrite(PIN_GATE2, true);
-		curnote = 0;
-		time = millis();
-	}
-
-	notes[maxnote] = note;
-	maxnote++;
-
-	pnotes[maxpnote] = note;
-	maxpnote++;
-}
-
-void removePlayingNote(byte note)
-{
-	int j = 0;
-	for (int i = 0; i < maxpnote; i++)
-	{
-		if (pnotes[i] != note)
+		int val = arp1.HandleNoteOn(note);
+		if (val != -1)
 		{
-			pnotes[j++] = pnotes[i];
+			digitalWrite(PIN_GATE1, true);
+			dac1.outputA(val);
+			return;
 		}
 	}
-	maxpnote--;
-}
 
-void removeAllPlayingNotes()
-{
-	for (int i = 0; i < maxnote; i++)
+	if (chan == cfg.mem.midi2)
 	{
-		pnotes[i] = notes[i];
+		int val = arp2.HandleNoteOn(note);
+		if (val != -1)
+		{
+			digitalWrite(PIN_GATE2, true);
+			dac1.outputB(val);
+		}
 	}
-	maxpnote = maxnote;
 }
 
 void handleNoteOff(byte chan, byte note, byte vel)
 {
-	if (chan != cfg.mem.midi1)
+	if (chan == cfg.mem.midi1 && cfg.mem.split > 0)
 	{
+		if (note >= cfg.mem.split)
+		{
+			bool gate = arp1.HandleNoteOff(note);
+			if (gate)
+				digitalWrite(PIN_GATE1, false);
+		}
+		if (note < cfg.mem.split)
+		{
+			bool gate = arp2.HandleNoteOff(note);
+			if (gate)
+				digitalWrite(PIN_GATE2, false);
+		}
 		return;
 	}
 
-	int j = 0;
-	for (int i = 0; i < maxnote; i++)
+	if (chan == cfg.mem.midi1)
 	{
-		if (notes[i] != note)
+		bool gate = arp1.HandleNoteOff(note);
+		if (gate)
 		{
-			notes[j++] = notes[i];
+			digitalWrite(PIN_GATE1, false);
+			return;
 		}
 	}
-	maxnote--;
 
-	if (maxnote == 0)
+	if (chan == cfg.mem.midi2)
 	{
-		digitalWrite(PIN_GATE1, false);
-		digitalWrite(PIN_GATE2, false);
+		bool gate = arp2.HandleNoteOff(note);
+		if (gate)
+		{
+			digitalWrite(PIN_GATE2, false);
+		}
 	}
 }
 
@@ -244,6 +228,14 @@ static void handleSysex(byte *array, unsigned size)
 		case 1: // cmd 0x01 = write a config byte
 		{
 			cfg.Write(array[i + 1], array[i + 2]); // addr = byte1, val = byte2
+			if (array[i + 1] == 0x04)
+			{
+				arp1.Transpose = array[i + 2];
+			}
+			if (array[i + 1] == 0x05)
+			{
+				arp2.Transpose = array[i + 2];
+			}
 			break;
 		}
 		}
@@ -252,37 +244,56 @@ static void handleSysex(byte *array, unsigned size)
 
 int ticks = 0;
 int midi1ticks = 0;
+int midi2ticks = 0;
 byte clock = 0xff;
 byte oldclock = 0xff;
 
 void handleStart()
 {
-	ticks = 1;
-	midi1ticks = 1;
+	ticks = cfg.mem.clockticks - 1;
+	midi1ticks = cfg.mem.midi1sync;
+	midi2ticks = cfg.mem.midi2sync;
 	clock = 0xff;
 	oldclock = 0xff;
-	curnote = 0;
+	arp1.Reset();
+	arp2.Reset();
 }
 
 void handleClock(void)
 {
-	ticks++;
 	midi1ticks++;
-
 	if (cfg.mem.midi1sync > 0 && midi1ticks >= cfg.mem.midi1sync)
 	{
 		midi1ticks = 0;
-		playarploop();
+		int val = arp1.PlayNote();
+		if (val != -1)
+		{
+			dac1.outputA(val);
+		}
 	}
 
+	midi2ticks++;
+	if (cfg.mem.midi2sync > 0 && midi2ticks >= cfg.mem.midi2sync)
+	{
+		midi2ticks = 0;
+		int val = arp2.PlayNote();
+		if (val != -1)
+		{
+			dac1.outputB(val);
+		}
+	}
+
+	ticks++;
 	if (ticks >= cfg.mem.clockticks)
 	{
 		ticks = 0;
 		clock++;
-		byte val = oldclock^clock;
+		byte val = oldclock ^ clock;
 		oldclock = clock;
 		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, val);
-	} else {
+	}
+	else
+	{
 		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, 0);
 	}
 }
@@ -303,9 +314,20 @@ void shiftOut(int ser, int srclk, int rclk, byte data)
 
 void handlePitchBend(byte chan, int val)
 {
-	if (chan != cfg.mem.midi1)
+	if (cfg.mem.split > 0)
 	{
+		arp1.Pitch = (val / (16384 / (4096 / 60)) * cfg.mem.pb1range);
+		arp2.Pitch = (val / (16384 / (4096 / 60)) * cfg.mem.pb2range);
 		return;
 	}
-	pitch = (val / (16384 / (4096 / 60)) * cfg.mem.pb1range);
+
+	if (chan == cfg.mem.midi1)
+	{
+		arp1.Pitch = (val / (16384 / (4096 / 60)) * cfg.mem.pb1range);
+	}
+
+	if (chan == cfg.mem.midi2)
+	{
+		arp2.Pitch = (val / (16384 / (4096 / 60)) * cfg.mem.pb2range);
+	}
 }

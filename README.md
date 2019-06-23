@@ -24,7 +24,7 @@ List of addresses to program:
 | Address | Description | Example value |
 | -- | -- | -- |
 | 0x00 | unused | -- |
-| 0x01 | Split keyboard at note | 0x40 |
+| 0x01 | Split keyboard at note | 0x40 (use 0x00 for no split) |
 | 0x02 | MIDI 1 Channel | 0x01 |
 | 0x03 | MIDI 2 Channel | 0x02 |
 | 0x04 | Transpose Channel 1 | 0x40 |

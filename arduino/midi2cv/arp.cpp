@@ -39,7 +39,6 @@ int Arp::PlayNote()
 		this->curnote = 0;
 	}
 	return scaleNote(this->pnotes[this->curnote]);
-	// return bound(map(this->pnotes[this->curnote] + this->Transpose, 0, 59, 0, 4095) + this->Pitch);
 }
 
 int Arp::CheckPlayNote(int speed)

@@ -17,13 +17,13 @@ $EndDescr
 $Comp
 L Connector_Generic:Conn_02x05_Odd_Even J2
 U 1 1 5CCDA988
-P 2100 1100
-F 0 "J2" H 2150 1517 50  0000 C CNN
-F 1 "Power" H 2150 1426 50  0000 C CNN
-F 2 "Connector_IDC:IDC-Header_2x05_P2.54mm_Vertical" H 2100 1100 50  0001 C CNN
-F 3 "~" H 2100 1100 50  0001 C CNN
-	1    2100 1100
-	1    0    0    -1  
+P 2200 1100
+F 0 "J2" H 2250 1517 50  0000 C CNN
+F 1 "Power" H 2250 1426 50  0000 C CNN
+F 2 "Connector_IDC:IDC-Header_2x05_P2.54mm_Vertical" H 2200 1100 50  0001 C CNN
+F 3 "~" H 2200 1100 50  0001 C CNN
+	1    2200 1100
+	-1   0    0    1   
 $EndComp
 Wire Wire Line
 	1900 1200 1900 1100
@@ -1214,12 +1214,12 @@ F 3 "" H 5250 2500 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Tomarus:Arduino_Nano_v3.x A?
+L Tomarus:Arduino_Nano_v3.x A1
 U 1 1 5CE84812
 P 2550 6350
-F 0 "A?" H 2550 5264 50  0000 C CNN
+F 0 "A1" H 2550 5264 50  0000 C CNN
 F 1 "Arduino_Nano_v3.x" H 2550 5173 50  0000 C CNN
-F 2 "Module:Arduino_Nano" H 2700 5400 50  0001 L CNN
+F 2 "Tomarus:Arduino_Nano_Silk" H 2700 5400 50  0001 L CNN
 F 3 "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf" H 2550 5350 50  0001 C CNN
 	1    2550 6350
 	1    0    0    -1  

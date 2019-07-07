@@ -9,6 +9,16 @@ MIDI2CV + ARPEGGIATOR
 
 [![Video Demo](http://img.youtube.com/vi/0akh9hcQQY0/0.jpg)](http://www.youtube.com/watch?v=0akh9hcQQY0)
 
+## Building Notes
+
+* Use a real Arduino Nano or atleast one with a real FTDI chip.
+* There is no tuning possibility, but a stable LM7805 is key.
+* The LED is on the wrong side but easy fixable using 2 short wires. (This is the only mistake on the PCB).
+* The LED resistor is dependent on your LED specs.
+* Capacitors have three holes, always use the square one and one of the others. Both 2.54mm and 5.08mm caps will fit.
+* Remove the jumper and power cable before programming!
+* DO NOT CONNECT POWER AND USB AT THE SAME TIME!
+
 ## Programming Using Webconfig
 
 See https://midi.tomarus.io/miarph/

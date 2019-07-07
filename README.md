@@ -28,8 +28,15 @@ Miarph is an Arduino based MIDI2CV converter with 4 0-5V 12 bit DAC's and 10 tri
 * The LED is on the wrong side but easy fixable using 2 short wires. (This is the only mistake on the PCB).
 * The LED resistor is dependent on your LED specs.
 * Capacitors have three holes, always use the square one and one of the others. Both 2.54mm and 5.08mm caps will fit.
+* Polarized caps should have their positive in the square hole and the negative pointing outwards the board. (See image above!)
 * Remove the jumper and power cable before programming!
 * DO NOT CONNECT POWER AND USB AT THE SAME TIME!
+
+## BUGS
+
+* It crashes at split note change. But after a reset it is correctly read from eeprom.
+* Trigger outputs are just an 8 port clock divider atm.
+* Transpose is buggy, but required because it can only support 60 MIDI notes.
 
 ## Programming Using Webconfig
 
@@ -39,6 +46,9 @@ You need a modern browser like Opera or Chrome to use this site.
 
 Note that all values are initially *unknown* until you actually change something.
 The device has no MIDI output so config values can't be read back.
+
+After initially building the device, you should set all of your defaults once via webconfig.
+After changing values it is stored on the device's eeprom and used at the next power up.
 
 ![Webconfig Screenshot](docs/webconfig.png)
 
@@ -72,3 +82,33 @@ List of addresses to program:
 | 0x0d | Midi Channel 2 sync | 0x00 (00 = use potmeter, otherwise nr of midi clock ticks) |
 | 0x0e | Clockticks to advance the clock divider | 0x03 (0x03 = sync to quarter notes) |
 | 0x0f | unused | -- |
+
+## Bill Of Materials
+
+|Designator                   |Package                                             |Quantity|Designation      |
+|-----------------------------|----------------------------------------------------|--------|-----------------|
+|RV1                          |Potentiometer_Alps_RK09K_Single_Vertical_HalfSilk   |1       |B10K             |
+|NANO                         |Arduino_Nano_Silk                                   |1       |Nano v3          |
+|C1                           |GenericCap                                          |1       |100uF            |
+|C2                           |GenericCap                                          |1       |10uF             |
+|C3,C4,C5,C6,C7,C8,C9         |GenericCap                                          |7       |100nF            |
+|D1                           |LED_D3.0mm                                          |1       |LED              |
+|D2,D3,D4                     |D_DO-35_SOD27_P7.62mm_Horizontal                    |3       |D                |
+|J1                           |PinHeader_1x02_P2.54mm_Vertical                     |1       |ProgramJmpr      |
+|J2                           |IDC-Header_2x05_P2.54mm_Vertical                    |1       |Power            |
+|J3,J14,J15                   |PinSocket_1x04_P2.54mm_Vertical                     |3       |Conn_01x04_Male  |
+|J4,J24,J25                   |PinHeader_1x04_P2.54mm_Vertical                     |3       |Conn_01x04_Female|
+|J5                           |PinSocket_1x08_P2.54mm_Vertical                     |1       |Conn_01x08_Male  |
+|J6                           |PinHeader_1x08_P2.54mm_Vertical                     |1       |Conn_01x08_Female|
+|J7                           |Jack_3.5mm_QingPu_WQP-PJ366ST_Vertical_CircularHoles|1       |Midi Input       |
+|J8-J13,J16-J23               |Jack_3.5mm_QingPu_WQP-PJ398SM_Vertical_CircularHoles|14      |Misc             |
+|R1,R2                        |R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal    |2       |2K2              |
+|R3,R4,R5,R6                  |R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal    |4       |1K               |
+|R7                           |R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal    |1       |220/470          |
+|R8,R9,R10,R11,R12,R13,R14,R15|R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal    |8       |100              |
+|U1                           |TO-220-3_Horizontal_TabDown                         |1       |L7805            |
+|U2                           |DIP-8_W7.62mm                                       |1       |24LC256          |
+|U5                           |DIP-4_W7.62mm                                       |1       |PC817            |
+|U6,U8                        |DIP-14_W7.62mm                                      |2       |TL074            |
+|U7                           |DIP-16_W7.62mm                                      |1       |74HC595          |
+|U3,U4                        |DIP-14_W7.62mm                                      |2       |MCP4922          |

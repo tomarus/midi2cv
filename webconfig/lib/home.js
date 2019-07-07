@@ -18,7 +18,7 @@ const Navigation = () =>
 				<span>
 					<i className='fa fa-fw fa-music'></i>
 					&nbsp;
-					Web Configuration for the Miarph MIDI2CV Eurorack module
+					Webconfig for Miarph MIDI2CV Eurorack module
 				</span>
 			</Navbar.Brand>
 			<Navbar.Toggle/>
@@ -62,7 +62,7 @@ const Error = (props) =>
 						<h1>No MIDI Available</h1>
 						<p>This website requires Web MIDI and atleast one MIDI port.</p>
 						<p>For more information on Web MIDI visit <a href='https://www.midi.org/articles/about-web-midi'>https://www.midi.org/articles/about-web-midi</a></p>
-						<p><a href='https://github.com/tomarus/midiseq' target='_blank'>View this project on github.</a></p>
+						<p><a href='https://github.com/tomarus/mid2cv' target='_blank'>View this project on github.</a></p>
 						<p></p>
 						<small className='text-muted'>If you really think this is an error, you might view your console output to see any error mesages returned from the MIDI system.</small>
 					</Col>

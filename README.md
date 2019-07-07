@@ -1,5 +1,7 @@
-MIDI2CV + ARPEGGIATOR
-=====================
+MIARPH * MIDI2CV + ARPEGGIATOR
+==============================
+
+Miarph is an Arduino based MIDI2CV converter with 4 0-5V 12 bit DAC's and 10 trigger outputs.
 
 ![Preview 1.0 PCB](docs/pcb1.0.jpg)
 
@@ -8,6 +10,16 @@ MIDI2CV + ARPEGGIATOR
 [![Video Demo](http://img.youtube.com/vi/SEof3n9Ys9w/0.jpg)](http://www.youtube.com/watch?v=SEof3n9Ys9w)
 
 [![Video Demo](http://img.youtube.com/vi/0akh9hcQQY0/0.jpg)](http://www.youtube.com/watch?v=0akh9hcQQY0)
+
+## Features
+
+* 4 individual 0-5v 12 bit DAC's (MCP4922 based)
+* 10 Trigger outputs
+* Dual Arpeggiator
+* SYSEX configurable.
+* Two MIDI-CC controller outputs.
+* Two Midi Note + Trigger outputs.
+* Split note (single channel) or two individual channel operations.
 
 ## Building Notes
 

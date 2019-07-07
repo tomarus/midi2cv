@@ -9,7 +9,18 @@ MIDI2CV + ARPEGGIATOR
 
 [![Video Demo](http://img.youtube.com/vi/0akh9hcQQY0/0.jpg)](http://www.youtube.com/watch?v=0akh9hcQQY0)
 
-## Programming
+## Programming Using Webconfig
+
+See https://midi.tomarus.io/miarph/
+
+You need a modern browser like Opera or Chrome to use this site.
+
+Note that all values are initially *unknown* until you actually change something.
+The device has no MIDI output so config values can't be read back.
+
+![Webconfig Screenshot](docs/webconfig.png)
+
+## Programming Using the Commandline
 
 Use the ```midi2cv``` Go utility to program the device.
 

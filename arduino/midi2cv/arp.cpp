@@ -21,9 +21,11 @@ Arp::Arp()
 	this->maxnote = 0;
 	this->maxpnote = 0;
 	this->curnote = 0;
-	this->Pitch = 0;
 	this->time = millis();
 	this->lastNoteOff = millis();
+
+	this->Pitch = 0;
+	this->Transpose = 0;
 }
 
 void Arp::Reset()

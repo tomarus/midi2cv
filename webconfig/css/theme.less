@@ -38,10 +38,26 @@ body {
 	color: #eee;
 }
 
-.navbar-default {
-	/*background-color: #464545;*/
-	/*border-color: transparent;*/
+.nav > li > a {
+	padding: 4px;
+	border: 1px dotted @gray-dark;
 }
+
+.nav > li.selected {
+	background: @gray;
+}
+
+.nav > li > a {
+	color: @gray-lighter;
+}
+
+.nav > li > a:hover {
+	background: @gray;
+}
+
+//.nav > li.selected > a {
+//	color: @gray-lighter;
+//}
 
 .btn:focus, a:focus {
 	outline: none;

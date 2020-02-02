@@ -25,10 +25,10 @@ struct cfgmem
 	byte midi2sync;  // 1..N = use N midi clock ticks for speed
 	byte clockticks; // Advance the clock divider each this many midi clock ticks
 	byte _reserved;
-
-	byte pmode[8]; // TODO: not implemented yet
-	byte pnote[8];
-	byte pclock[8];
+	// 0x10
+	byte pmode[8];  // pmode == 0 use port for clock divider, pmode == 1 use port for drum trigger
+	byte pnote[8];  // drum trigger note if pmode == 1
+	byte pclock[8]; // clock division if pmode ==0, division is 1<<X
 };
 
 class Config
@@ -41,10 +41,6 @@ public:
 
 	void Write(int, byte);
 	byte Len();
-
-	byte PMode(int);
-	byte PNote(int);
-	byte PClock(int);
 
 private:
 	int devaddr;

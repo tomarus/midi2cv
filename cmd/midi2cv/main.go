@@ -12,6 +12,8 @@ import (
 	"github.com/scgolang/midi"
 )
 
+const deviceID = 0x4f
+
 // byteconv converts a string to a byte.
 func byteconv(in string) byte {
 	base := 10
@@ -24,7 +26,7 @@ func byteconv(in string) byte {
 }
 
 func sysexWrite(device *midi.Device, addr, data byte) {
-	var req = []byte{0xf0, 0x7d, 0x2a, 0x4f, 0x01, addr, data, 0xf7}
+	var req = []byte{0xf0, 0x7d, 0x2a, deviceID, 0x01, addr, data, 0xf7}
 	n, err := device.Write(req)
 	if err != nil {
 		log.Fatalf("can't send configuration request: %v", err)
@@ -39,6 +41,7 @@ func main() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
 		fmt.Fprintf(flag.CommandLine.Output(), "\t%s [flags] command [args]\n", os.Args[0])
 		fmt.Fprintf(flag.CommandLine.Output(), "\t%s [flags] write 0xADDR 0xBYTE\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "\t%s [flags] reset\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 	optL := flag.Bool("l", false, "List devices")
@@ -86,6 +89,11 @@ func main() {
 	switch command[0] {
 	case "write":
 		sysexWrite(device, byteconv(command[1]), byteconv(command[2]))
+	case "reset":
+		// length should match that from eeprom.h
+		for i := 0; i < 40; i++ {
+			sysexWrite(device, byte(i), 0)
+		}
 	default:
 		fmt.Printf("Supported command: %s\n", command[0])
 	}

@@ -2,7 +2,7 @@
 
   (general
     (thickness 1.6)
-    (drawings 12)
+    (drawings 10)
     (tracks 566)
     (zones 0)
     (modules 63)
@@ -3344,15 +3344,13 @@
     )
   )
 
+  (gr_line (start 71.12 30.48) (end 71.12 127) (layer Edge.Cuts) (width 0.15))
   (gr_text JLCJLCJLCJLC (at 64.262 72.898) (layer F.SilkS) (tstamp 5CE87613)
     (effects (font (size 1 1) (thickness 0.15)))
   )
   (gr_text "TOMARUS\nMiarph v1.1" (at 64.008 69.088) (layer F.SilkS)
     (effects (font (size 1.5 1.5) (thickness 0.3)))
   )
-  (gr_line (start 71.12 30.48) (end 71.12 127) (layer Edge.Cuts) (width 0.15))
-  (gr_line (start 111.76 30.48) (end 91.44 30.48) (layer Edge.Cuts) (width 0.15))
-  (gr_line (start 111.76 127) (end 91.44 127) (layer Edge.Cuts) (width 0.15))
   (gr_text V-Cut (at 71.12 23.368) (layer Eco1.User)
     (effects (font (size 1.5 1.5) (thickness 0.3)))
   )
@@ -3360,9 +3358,9 @@
     (effects (font (size 1.5 1.5) (thickness 0.3)))
   )
   (gr_line (start 71.12 25.4) (end 71.12 132.08) (layer Eco1.User) (width 0.15) (tstamp 5CED547A))
-  (gr_line (start 91.44 30.48) (end 30.48 30.48) (layer Edge.Cuts) (width 0.15))
+  (gr_line (start 111.76 30.48) (end 30.48 30.48) (layer Edge.Cuts) (width 0.15) (tstamp 5D2075DC))
   (gr_line (start 111.76 127) (end 111.76 30.48) (layer Edge.Cuts) (width 0.15))
-  (gr_line (start 30.48 127) (end 91.44 127) (layer Edge.Cuts) (width 0.15))
+  (gr_line (start 30.48 127) (end 111.76 127) (layer Edge.Cuts) (width 0.15))
   (gr_line (start 30.48 30.48) (end 30.48 127) (layer Edge.Cuts) (width 0.15))
 
   (segment (start 33.565999 95.795999) (end 32.766 94.996) (width 0.25) (layer B.Cu) (net 3))

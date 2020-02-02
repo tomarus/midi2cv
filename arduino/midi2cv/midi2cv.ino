@@ -15,6 +15,9 @@
 #define PIN_GATE1 12
 #define PIN_POT_SPEED A0
 
+// Only change this if you have more than one Miarph
+#define MIARPH_DEVICE_ID 0x4f
+
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 Config cfg(0x50); // I2C addr of 24LC256
@@ -79,10 +82,7 @@ void toggleled()
 
 void loop()
 {
-	if (MIDI.read())
-	{
-		toggleled();
-	}
+	MIDI.read();
 
 	int speed = analogRead(PIN_POT_SPEED);
 	if (cfg.mem.midi1sync == 0)
@@ -98,6 +98,8 @@ void loop()
 			dac1.outputB(val);
 	}
 }
+
+byte shiftreg = 0;
 
 void handleNoteOn(byte chan, byte note, byte vel)
 {
@@ -144,6 +146,18 @@ void handleNoteOn(byte chan, byte note, byte vel)
 			dac1.outputB(val);
 		}
 	}
+
+	bool triggered = false;
+	for (int i = 0; i < 8; i++)
+	{
+		if (cfg.mem.pmode[i] == 1 && note == cfg.mem.pnote[i]) {
+			shiftreg = shiftreg ^ 1 << i;
+			triggered = true;
+		}
+	}
+	if (triggered) {
+		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, shiftreg);
+	}
 }
 
 void handleNoteOff(byte chan, byte note, byte vel)
@@ -183,6 +197,18 @@ void handleNoteOff(byte chan, byte note, byte vel)
 			digitalWrite(PIN_GATE2, false);
 		}
 	}
+
+	bool triggered = false;
+	for (int i = 0; i < 8; i++)
+	{
+		if (cfg.mem.pmode[i] == 1 && note == cfg.mem.pnote[i]) {
+			shiftreg = shiftreg & ~(1 << i);
+			triggered = true;
+		}
+	}
+	if (triggered) {
+		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, shiftreg);
+	}
 }
 
 // handle sustain pedal
@@ -212,7 +238,7 @@ static void handleSysex(byte *array, unsigned size)
 {
 	if (size < 5)
 		return;
-	if (!(array[1] == 0x7d && array[2] == 0x2a && array[3] == 0x4f))
+	if (!(array[1] == 0x7d && array[2] == 0x2a && array[3] == MIARPH_DEVICE_ID))
 		return;
 
 	for (int i = 4; i < size - 1; i++)
@@ -286,16 +312,22 @@ void handleClock(void)
 	ticks++;
 	if (ticks >= cfg.mem.clockticks)
 	{
+		toggleled();
 		ticks = 0;
 		clock++;
 		byte val = oldclock ^ clock;
 		oldclock = clock;
-		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, val);
+		for (int i = 0; i < 8; i++) {
+			if (cfg.mem.pmode[i] == 0) {
+				if (val & 1 << (cfg.mem.pclock[i]+1)) {
+					shiftreg = shiftreg ^ 1 << i;
+				} else {
+					shiftreg = shiftreg & ~(1 << i);
+				}
+			}
+		}
 	}
-	else
-	{
-		shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, 0);
-	}
+	shiftOut(PIN_595_SER, PIN_595_SRCLK, PIN_595_RCLK, shiftreg);
 }
 
 // shiftOut sets the 8 programmable gates to the

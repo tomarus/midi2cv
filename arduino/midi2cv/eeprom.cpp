@@ -29,23 +29,6 @@ byte Config::Len()
 
 //
 
-byte Config::PMode(int n)
-{
-	return this->mem.pmode[n];
-}
-
-byte Config::PNote(int n)
-{
-	return this->mem.pnote[n];
-}
-
-byte Config::PClock(int n)
-{
-	return this->mem.pclock[n];
-}
-
-//
-
 void Config::setmem(int addr, byte val)
 {
 	// hacketyhack

@@ -1,7 +1,7 @@
 import { Hex } from 'lib/midi/util'
 
 import { setErrorAction, setMidiAction, setPortsAction, setStatusAction } from 'lib/store/midi'
-import { setConfigAction, setOutputDeviceAction } from 'lib/store/config'
+import { setConfigAction, setOutputDeviceAction, setPortModeAction, setPortClockAction, setPortTriggerAction, setDeviceIdAction} from 'lib/store/config'
 
 let midiAccess = null
 let store
@@ -105,6 +105,19 @@ export function MidiOUT(device, bytes) {
 	device.send(bytes)
 }
 
+var deviceID = 0x4f
+
+function MidiOUTAddress(address, value) {
+	MidiOUT(outputDevices[outputDevice], [
+		0xf0, 0x7d,     // sysex, non commercial / educational manufacturer id.
+		0x2a, deviceID, // my own little secret magic number id for this device.
+		0x01,           // COMMAND 0x01 = write config byte.
+		address & 0x7f, // write address to configure.
+		value & 0x7f,   // write value to configure.
+		0xf7            // mark end of sysex.
+	])
+}
+
 // Forwards to all devices except name
 export function MidiOUTForward(name, bytes) {
 	midiAccess.outputs.forEach((output) => {
@@ -123,18 +136,43 @@ export function SetConfigAddress(address, value) {
 	if (value == -1) {
 		return
 	}
-	MidiOUT(outputDevices[outputDevice], [
-		0xf0, 0x7d,     // sysex, non commercial / educational manufacturer id.
-		0x2a, 0x4f,     // my own little secret magic number id for this device.
-		0x01,           // COMMAND 0x01 = write config byte.
-		address & 0x7f, // write address to configure.
-		value & 0x7f,   // write value to configure.
-		0xf7            // mark end of sysex.
-	])
+	MidiOUTAddress(address, value)
 	store.dispatch(setConfigAction(address, value))
 }
 
 export function SetOutputDevice(device) {
 	outputDevice = device
 	store.dispatch(setOutputDeviceAction(device))
+}
+
+export function SetPortMode(index, value) {
+	if (value == -1) {
+		return
+	}
+	// See arduino/eeprom.h, 16 is address of modes
+	MidiOUTAddress(16 + index, value)
+	store.dispatch(setPortModeAction(index, value))
+}
+
+export function SetPortClock(index, value) {
+	if (value == -1) {
+		return
+	}
+	// See arduino/eeprom.h, 32 is address of clocks
+	MidiOUTAddress(32 + index, value)
+	store.dispatch(setPortClockAction(index, value))
+}
+
+export function SetPortTrigger(index, value) {
+	if (value == -1) {
+		return
+	}
+	// See arduino/eeprom.h, 24 is address of triggers
+	MidiOUTAddress(24 + index, value)
+	store.dispatch(setPortTriggerAction(index, value))
+}
+
+export function SetDeviceID(id) {
+	store.dispatch(setDeviceIdAction(id))
+	deviceID = id
 }

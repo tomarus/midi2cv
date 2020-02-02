@@ -1,8 +1,14 @@
 const SET_ADDRESS = 'config/SET_ADDRESS'
 const SET_DEVICE = 'config/SET_DEVICE'
+const SET_DEVICE_ID = 'config/SET_DEVICE_ID'
+
+const SET_PORT_CLOCK = 'config/SET_PORT_CLOCK'
+const SET_PORT_MODE = 'config/SET_PORT_MODE'
+const SET_PORT_TRIGGER = 'config/SET_PORT_TRIGGER'
 
 const initialState = {
 	device: 0,
+	deviceid: 0x4f,
 	split: -1,
 	channel1: 0,
 	channel2: 0,
@@ -17,6 +23,9 @@ const initialState = {
 	midi1sync: -1,
 	midi2sync: -1,
 	clockticks: -1,
+	portmodes: [ -1, -1, -1, -1, -1, -1, -1, -1 ],
+	porttriggers: [ -1, -1, -1, -1, -1, -1, -1, -1 ],
+	portclocks: [ -1, -1, -1, -1, -1, -1, -1, -1 ],
 }
 
 export const setConfigAction = (address, value) => ({
@@ -27,6 +36,22 @@ export const setOutputDeviceAction = (device) => ({
 	type: SET_DEVICE, device 
 })
 
+export const setDeviceIdAction = (id) => ({
+	type: SET_DEVICE_ID, id
+})
+
+export const setPortModeAction = (index, value) => ({
+	type: SET_PORT_MODE, index, value
+})
+
+export const setPortClockAction = (index, value) => ({
+	type: SET_PORT_CLOCK, index, value
+})
+
+export const setPortTriggerAction = (index, value) => ({
+	type: SET_PORT_TRIGGER, index, value
+})
+
 //
 
 const reducer = (state = initialState, action = {}) => {
@@ -35,6 +60,24 @@ const reducer = (state = initialState, action = {}) => {
 	switch (action.type) {
 		case SET_DEVICE:
 			newState.device = action.value
+			break
+		case SET_DEVICE_ID:
+			newState.deviceid = action.id
+			break
+		case SET_PORT_CLOCK:
+			newState.portclocks = state.portclocks.map((item, j) => {
+				return action.index === j ? action.value : item
+			})
+			break
+		case SET_PORT_MODE:
+			newState.portmodes = state.portmodes.map((item, j) => {
+				return action.index === j ? action.value : item
+			})
+			break
+		case SET_PORT_TRIGGER:
+			newState.porttriggers = state.porttriggers.map((item, j) => {
+				return action.index === j ? action.value : item
+			})
 			break
 		case SET_ADDRESS:
 			switch (action.address) {
@@ -81,9 +124,8 @@ const reducer = (state = initialState, action = {}) => {
 					newState.clockticks = action.value
 					break
 			}
-			return newState
 	}
-	return state
+	return newState
 }
 
 export default reducer
